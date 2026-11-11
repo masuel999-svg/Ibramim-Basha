@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber Mecha Titan - Multiplication Heroes</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Orbitron, Cairo & Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Montserrat:wght@500;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            orbitron: ['Orbitron', 'sans-serif'],
+            montserrat: ['Montserrat', 'sans-serif']
+          },
+          colors: {
+            cyberDark: '#070b19',
+            mechaBlue: {
+              400: '#38bdf8',
+              500: '#0284c7',
+              600: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e'
+            },
+            neonCyan: '#00f2fe',
+            neonGreen: '#10b981',
+            laserOrange: '#ff7600',
+            cyberGold: '#facc15'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at 15% 15%, #0f172a 0%, #070b19 65%, #020617 100%);
+      min-height: 100vh;
+      color: #f8fafc;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body.lang-ar { font-family: 'Cairo', sans-serif; }
+    body.lang-tr { font-family: 'Montserrat', sans-serif; }
+    body.lang-ru { font-family: 'Montserrat', sans-serif; }
+
+    /* Cyber Card 3D Flip */
+    .card-scene {
+      perspective: 900px;
+    }
+    .card-object {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .card-flipped {
+      transform: rotateY(180deg);
+    }
+    .card-side {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 1rem;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Mecha SVG Pieces */
+    .piece-locked {
+      fill: #1e293b !important;
+      stroke: #334155 !important;
+      opacity: 0.32;
+      stroke-dasharray: 4 3;
+      transition: all 0.5s ease;
+    }
+    .piece-unlocked {
+      transition: all 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: center;
+      filter: drop-shadow(0 0 7px rgba(0, 242, 254, 0.7));
+    }
+
+    @keyframes pulseReactor {
+      0%, 100% { filter: drop-shadow(0 0 5px #00f2fe); transform: scale(1); }
+      50% { filter: drop-shadow(0 0 18px #38bdf8); transform: scale(1.05); }
+    }
+    .reactor-pulse {
+      animation: pulseReactor 2s infinite ease-in-out;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #0284c7; border-radius: 999px; }
+  </style>
+</head>
+<body class="lang-ar p-2 sm:p-4 md:p-6 overflow-x-hidden" id="appBody" dir="rtl">
+
+  <!-- TOP AUTHOR BRANDING BADGE -->
+  <div class="max-w-7xl mx-auto mb-3 bg-gradient-to-r from-cyan-950 via-slate-900 to-blue-950 border-2 border-cyan-400/60 rounded-2xl p-2.5 px-4 shadow-xl flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+    <div class="flex items-center gap-2 font-bold text-cyan-300">
+      <i class="fa-solid fa-crown text-cyberGold animate-bounce"></i>
+      <span id="creditBadge" class="tracking-wide">تصميم: د. محسن الكاشف | Designed by: Dr. Mohsen El-Khashef</span>
+    </div>
+    <!-- Language Selector Buttons -->
+    <div class="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-cyan-500/40">
+      <button onclick="setLanguage('ar')" id="btnLangAr" class="px-2.5 py-1 rounded-lg text-xs font-bold transition bg-cyan-500 text-slate-950">العربية</button>
+      <button onclick="setLanguage('tr')" id="btnLangTr" class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white">Türkçe</button>
+      <button onclick="setLanguage('ru')" id="btnLangRu" class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white">Русский</button>
+    </div>
+  </div>
+
+  <!-- Main Game Cyber Header -->
+  <header class="max-w-7xl mx-auto mb-4 bg-slate-900/90 backdrop-blur-md rounded-3xl p-4 shadow-2xl border-2 border-cyan-500/40 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-14 h-14 bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg border border-cyan-300 transform -rotate-3 hover:rotate-0 transition">
+        <i class="fa-solid fa-robot"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 id="uiMainTitle" class="text-lg sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400">
+            تحدي الأبطال: مصنع المحارب الآلي
+          </h1>
+          <span class="bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-md font-orbitron">
+            CYBER TITAN 3.0
+          </span>
+        </div>
+        <p id="uiSubTitle" class="text-xs sm:text-sm text-slate-400 font-semibold mt-0.5">
+          أتقن جدول الضرب! اجمع 15 قطعة درع ميكانيكية لتشغيل البطل الآلي العملاق ⚡
+        </p>
+      </div>
+    </div>
+
+    <!-- Live Status Indicators -->
+    <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+      <!-- Shield Badge -->
+      <div id="shieldBadge" class="hidden items-center gap-1.5 bg-cyan-950/80 border-2 border-cyan-400 text-cyan-300 px-3 py-1.5 rounded-2xl text-xs sm:text-sm font-bold shadow-lg shadow-cyan-900/30">
+        <i class="fa-solid fa-shield-halved text-cyan-400 animate-pulse text-base"></i>
+        <span id="shieldBadgeText">درع الطاقة نشط</span>
+      </div>
+
+      <!-- Active Rule Badge -->
+      <div id="ruleBadge" class="hidden items-center gap-1.5 bg-amber-950/80 border-2 border-amber-500 text-amber-300 px-3 py-1.5 rounded-2xl text-xs sm:text-sm font-bold shadow-lg">
+        <i class="fa-solid fa-bolt text-amber-400"></i>
+        <span id="ruleBadgeText">مهمة بطولية</span>
+      </div>
+
+      <!-- Pieces Counter -->
+      <div class="bg-slate-800/90 border-2 border-cyan-500/60 px-4 py-2 rounded-2xl flex items-center gap-3 shadow-inner">
+        <div class="text-right">
+          <div id="uiPiecesLabel" class="text-[10px] text-cyan-400 font-extrabold uppercase font-orbitron">دروع التايتن</div>
+          <div class="text-lg sm:text-2xl font-black text-sky-300 font-orbitron flex items-baseline gap-1">
+            <span id="piecesCount">0</span>
+            <span class="text-xs text-slate-500 font-normal">/ 15</span>
+          </div>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold text-base shadow">
+          <i class="fa-solid fa-gears"></i>
+        </div>
+      </div>
+
+      <!-- Reset Game -->
+      <button onclick="resetGame()" class="bg-slate-800 hover:bg-cyan-900/60 border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-cyan-300 p-3 rounded-2xl transition shadow-md font-bold active:scale-95" title="إعادة تشغيل">
+        <i class="fa-solid fa-arrow-rotate-right text-lg"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Interactive Grid & Robot Display Area -->
+  <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+    
+    <!-- LEFT COLUMN: The 15-Piece Mecha Robot SVG -->
+    <section class="lg:col-span-5 bg-slate-900/90 backdrop-blur-md rounded-3xl p-5 shadow-2xl border-2 border-cyan-500/30 flex flex-col items-center">
+      <div class="w-full flex items-center justify-between mb-2">
+        <h2 id="uiMechaBayTitle" class="text-base sm:text-lg font-black text-cyan-400 flex items-center gap-2">
+          <i class="fa-solid fa-microchip text-cyan-400"></i>
+          <span>حجرة تجميع المحارب الآلي (15 درعاً)</span>
+        </h2>
+        <span id="progressPercent" class="text-xs bg-cyan-950 text-cyan-300 border border-cyan-500/40 px-3 py-1 rounded-full font-bold font-orbitron">0% READY</span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden mb-3 border border-cyan-900">
+        <div id="puzzleProgressBar" class="h-full bg-gradient-to-r from-cyan-500 via-sky-400 to-blue-600 rounded-full transition-all duration-700" style="width: 0%"></div>
+      </div>
+
+      <!-- Cyber Robot SVG (15 Detailed Parts) -->
+      <div class="relative w-full max-w-[340px] sm:max-w-[380px] aspect-[4/5] bg-gradient-to-b from-slate-950 via-slate-900 to-blue-950/60 rounded-3xl p-2 flex items-center justify-center border-2 border-cyan-500/20 shadow-inner">
+        <svg id="mechaSvg" viewBox="0 0 400 480" class="w-full h-full select-none">
+          <defs>
+            <linearGradient id="armorGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#38bdf8" />
+              <stop offset="50%" stop-color="#0284c7" />
+              <stop offset="100%" stop-color="#0369a1" />
+            </linearGradient>
+            <linearGradient id="darkArmor" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#334155" />
+              <stop offset="100%" stop-color="#0f172a" />
+            </linearGradient>
+            <linearGradient id="goldEnergy" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fde047" />
+              <stop offset="100%" stop-color="#ea580c" />
+            </linearGradient>
+            <linearGradient id="laserBlade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#22d3ee" />
+              <stop offset="50%" stop-color="#38bdf8" />
+              <stop offset="100%" stop-color="#ffffff" />
+            </linearGradient>
+            <linearGradient id="wingGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#06b6d4" />
+              <stop offset="100%" stop-color="#1e1b4b" />
+            </linearGradient>
+          </defs>
+
+          <!-- 15. Energy Wings (Background) -->
+          <g id="part-15" class="piece-locked">
+            <polygon points="150,150 40,80 70,160 30,180 130,220" fill="url(#wingGrad)" stroke="#38bdf8" stroke-width="2" />
+            <polygon points="250,150 360,80 330,160 370,180 270,220" fill="url(#wingGrad)" stroke="#38bdf8" stroke-width="2" />
+            <text id="label-15" x="200" y="70" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">15. WINGS</text>
+          </g>
+
+          <!-- 1. Cyber Helmet -->
+          <g id="part-1" class="piece-locked">
+            <polygon points="160,50 240,50 260,95 240,120 160,120 140,95" fill="url(#armorGrad)" stroke="#7dd3fc" stroke-width="3" />
+            <polygon points="175,35 225,35 200,50" fill="url(#goldEnergy)" stroke="#f59e0b" stroke-width="1.5" />
+            <text id="label-1" x="200" y="55" font-size="12" font-weight="bold" fill="#64748b" text-anchor="middle">1</text>
+          </g>
+
+          <!-- 2. Visor Scanner -->
+          <g id="part-2" class="piece-locked">
+            <polygon points="165,80 235,80 225,100 175,100" fill="#06b6d4" stroke="#e0f2fe" stroke-width="2" class="reactor-pulse" />
+            <line x1="170" y1="90" x2="230" y2="90" stroke="#ffffff" stroke-width="2" />
+            <text id="label-2" x="200" y="94" font-size="10" font-weight="bold" fill="#0f172a" text-anchor="middle">2</text>
+          </g>
+
+          <!-- 3. Heavy Chestplate -->
+          <g id="part-3" class="piece-locked">
+            <polygon points="140,125 260,125 280,210 200,230 120,210" fill="url(#darkArmor)" stroke="#0284c7" stroke-width="3" />
+            <polygon points="155,135 245,135 235,175 165,175" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" />
+            <text id="label-3" x="200" y="150" font-size="13" font-weight="bold" fill="#64748b" text-anchor="middle">3</text>
+          </g>
+
+          <!-- 4. Core Reactor -->
+          <g id="part-4" class="piece-locked">
+            <circle cx="200" cy="180" r="22" fill="#080d1a" stroke="#06b6d4" stroke-width="3" />
+            <polygon points="200,165 215,190 185,190" fill="url(#goldEnergy)" class="reactor-pulse" />
+            <circle cx="200" cy="180" r="7" fill="#ffffff" />
+            <text id="label-4" x="200" y="184" font-size="10" font-weight="bold" fill="#080d1a" text-anchor="middle">4</text>
+          </g>
+
+          <!-- 5. Right Shoulder Cannon -->
+          <g id="part-5" class="piece-locked">
+            <polygon points="135,125 90,140 80,185 125,170" fill="url(#armorGrad)" stroke="#7dd3fc" stroke-width="2.5" />
+            <circle cx="105" cy="155" r="5" fill="#f59e0b" />
+            <text id="label-5" x="105" y="159" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">5</text>
+          </g>
+
+          <!-- 6. Left Shoulder Armor -->
+          <g id="part-6" class="piece-locked">
+            <polygon points="265,125 310,140 320,185 275,170" fill="url(#armorGrad)" stroke="#7dd3fc" stroke-width="2.5" />
+            <circle cx="295" cy="155" r="5" fill="#f59e0b" />
+            <text id="label-6" x="295" y="159" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">6</text>
+          </g>
+
+          <!-- 7. Laser Arm Blaster -->
+          <g id="part-7" class="piece-locked">
+            <rect x="75" y="185" width="30" height="55" rx="6" fill="url(#darkArmor)" stroke="#0284c7" stroke-width="2" />
+            <polygon points="65,240 85,240 85,275 65,270" fill="#0284c7" stroke="#38bdf8" stroke-width="1.5" />
+            <rect x="70" y="275" width="10" height="15" fill="#f97316" />
+            <text id="label-7" x="90" y="220" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">7</text>
+          </g>
+
+          <!-- 8. Left Power Shield -->
+          <g id="part-8" class="piece-locked">
+            <rect x="90" y="240" width="22" height="25" rx="5" fill="url(#armorGrad)" stroke="#7dd3fc" stroke-width="2" />
+            <line x1="95" y1="247" x2="107" y2="247" stroke="#38bdf8" stroke-width="2" />
+            <text id="label-8" x="101" y="257" font-size="10" font-weight="bold" fill="#0f172a" text-anchor="middle">8</text>
+          </g>
+
+          <!-- 9. Energy Saber -->
+          <g id="part-9" class="piece-locked">
+            <rect x="295" y="185" width="30" height="55" rx="6" fill="url(#darkArmor)" stroke="#0284c7" stroke-width="2" />
+            <polygon points="310,210 340,225 340,265 310,270" fill="url(#armorGrad)" stroke="#38bdf8" stroke-width="2" />
+            <text id="label-9" x="310" y="220" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">9</text>
+          </g>
+
+          <!-- 10. Mechanical Waist -->
+          <g id="part-10" class="piece-locked">
+            <rect x="315" y="270" width="10" height="20" fill="#475569" stroke="#94a3b8" stroke-width="1" />
+            <polygon points="318,170 322,170 326,270 314,270" fill="url(#laserBlade)" stroke="#38bdf8" stroke-width="2" />
+            <polygon points="317,145 323,145 320,170" fill="#ffffff" />
+            <text id="label-10" x="320" y="260" font-size="10" font-weight="bold" fill="#0f172a" text-anchor="middle">10</text>
+          </g>
+
+          <!-- 11. Right Thigh Armor -->
+          <g id="part-11" class="piece-locked">
+            <polygon points="150,230 250,230 235,265 165,265" fill="url(#armorGrad)" stroke="#0284c7" stroke-width="2.5" />
+            <circle cx="200" cy="248" r="8" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" />
+            <text id="label-11" x="200" y="252" font-size="10" font-weight="bold" fill="#0f172a" text-anchor="middle">11</text>
+          </g>
+
+          <!-- 12. Left Thigh Armor -->
+          <g id="part-12" class="piece-locked">
+            <polygon points="160,268 190,268 185,335 150,335" fill="url(#darkArmor)" stroke="#0284c7" stroke-width="2" />
+            <line x1="162" y1="290" x2="182" y2="290" stroke="#38bdf8" stroke-width="2" />
+            <text id="label-12" x="168" y="305" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">12</text>
+          </g>
+
+          <!-- 13. Right Leg Thruster -->
+          <g id="part-13" class="piece-locked">
+            <polygon points="210,268 240,268 250,335 215,335" fill="url(#darkArmor)" stroke="#0284c7" stroke-width="2" />
+            <line x1="218" y1="290" x2="238" y2="290" stroke="#38bdf8" stroke-width="2" />
+            <text id="label-13" x="230" y="305" font-size="11" font-weight="bold" fill="#64748b" text-anchor="middle">13</text>
+          </g>
+
+          <!-- 14. Left Leg Thruster -->
+          <g id="part-14" class="piece-locked">
+            <polygon points="145,338 185,338 180,410 135,410" fill="url(#armorGrad)" stroke="#7dd3fc" stroke-width="2.5" />
+            <polygon points="125,410 190,410 195,435 115,435" fill="#0f172a" stroke="#0284c7" stroke-width="2" />
+            <polygon points="135,435 175,435 155,448" fill="#f97316" />
+            <text id="label-14" x="160" y="375" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">14</text>
+          </g>
+
+          <!-- 15 (Leg part sync) -->
+          <g id="part-15-leg" class="piece-locked">
+            <polygon points="215,338 255,338 265,410 220,410" fill="url(#armorGrad)" stroke="#7dd3fc" stroke-width="2.5" />
+            <polygon points="210,410 275,410 285,435 205,435" fill="#0f172a" stroke="#0284c7" stroke-width="2" />
+            <polygon points="225,435 265,435 245,448" fill="#f97316" />
+            <text id="label-15-leg" x="240" y="375" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">15</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Live Mission Status -->
+      <div class="mt-4 p-3 bg-slate-800/80 border border-cyan-500/30 rounded-2xl w-full text-center">
+        <p id="puzzleHint" class="text-xs sm:text-sm text-cyan-300 font-bold">
+          ⚡ افتح بطاقات الطاقة الـ 36، حل مسائل الضرب واشحن دروع المحارب الآلي!
+        </p>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: 36 Cards Grid (6x6) -->
+    <section class="lg:col-span-7 bg-slate-900/90 backdrop-blur-md rounded-3xl p-4 sm:p-5 shadow-2xl border-2 border-cyan-500/30 flex flex-col">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div>
+          <h2 id="uiGridTitle" class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+            <i class="fa-solid fa-bolt text-cyan-400"></i>
+            <span>مصفوفة طاقة السايبر (36 كارت - 6×6)</span>
+          </h2>
+          <p id="uiGridSub" class="text-xs text-slate-400 font-semibold">المس أي بطاقة لبدء التحدي الحسابي أو كشف المكافأة</p>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs flex-wrap font-bold">
+          <span class="flex items-center gap-1 bg-cyan-950 text-cyan-300 border border-cyan-500/40 px-2 py-1 rounded-lg">
+            <i class="fa-solid fa-calculator"></i> <span id="legQ">ضرب (16)</span>
+          </span>
+          <span class="flex items-center gap-1 bg-amber-950 text-amber-300 border border-amber-500/40 px-2 py-1 rounded-lg">
+            <i class="fa-solid fa-trophy"></i> <span id="legLoot">غنائم (7)</span>
+          </span>
+          <span class="flex items-center gap-1 bg-purple-950 text-purple-300 border border-purple-500/40 px-2 py-1 rounded-lg">
+            <i class="fa-solid fa-shield-virus"></i> <span id="legRule">أحكام (6)</span>
+          </span>
+          <span class="flex items-center gap-1 bg-rose-950 text-rose-300 border border-rose-500/40 px-2 py-1 rounded-lg">
+            <i class="fa-solid fa-skull"></i> <span id="legTrap">فخاخ (7)</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 6x6 Grid Container -->
+      <div id="cardsGrid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-2.5 flex-grow">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+  </main>
+
+  <!-- BOTTOM FOOTER BRANDING -->
+  <footer class="max-w-7xl mx-auto mt-6 bg-slate-950/80 border-t-2 border-cyan-500/40 rounded-2xl p-4 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+    <div class="flex items-center gap-2">
+      <span class="text-cyan-400 font-orbitron font-bold">CYBER MECHA TITAN</span>
+      <span class="text-slate-600">|</span>
+      <span id="uiFooterCredits" class="font-bold text-amber-300">تصميم وإشراف: د. محسن الكاشف (Dr. Mohsen El-Khashef)</span>
+    </div>
+    <div class="text-[11px] text-slate-400">
+      Multiplication Mastery • Full Trilingual Platform (AR / TR / RU)
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. MULTIPLICATION QUESTION MODAL -->
+  <div id="questionModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-4 border-cyan-400 rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 text-center relative overflow-hidden">
+      <div class="w-14 h-14 mx-auto -mt-1 mb-2 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg border border-cyan-300">
+        <i class="fa-solid fa-calculator"></i>
+      </div>
+      <div class="inline-block bg-cyan-950 border border-cyan-500/50 text-cyan-300 text-xs px-3 py-1 rounded-full font-bold mb-2 font-orbitron" id="qTopic">
+        MULTIPLICATION CHALLENGE
+      </div>
+      <h3 id="qTitle" class="text-base sm:text-lg font-black text-white mb-1">مسألة شحن المفاعل</h3>
+      <p id="qArabic" class="text-xs text-slate-300 mb-3 font-semibold">احسب المسألة ذهنياً واختر الإجابة الصحيحة لإضافة درع للروبوت:</p>
+
+      <div class="bg-slate-950 border-2 border-cyan-500/50 rounded-2xl p-4 mb-4 text-center shadow-inner">
+        <p id="qPrompt" class="text-2xl sm:text-3xl font-black text-cyan-300 font-orbitron tracking-widest" dir="ltr">
+          8 × 7 = ?
+        </p>
+      </div>
+
+      <div id="qOptions" class="grid grid-cols-2 gap-2.5 mb-4" dir="ltr">
+        <!-- Buttons injected -->
+      </div>
+
+      <div id="qFeedback" class="hidden text-xs sm:text-sm font-bold p-3 rounded-xl mb-3"></div>
+
+      <div class="flex justify-end gap-2">
+        <button id="qCloseBtn" onclick="closeModal('questionModal')" class="hidden w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 py-2.5 rounded-xl font-black transition">
+          متابعة المعركة ⚡
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. HERO REWARDS / LOOT MODAL -->
+  <div id="giftModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-4 border-amber-400 rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 text-center relative overflow-hidden">
+      <div class="w-14 h-14 mx-auto -mt-1 mb-2 bg-gradient-to-tr from-amber-400 to-yellow-500 rounded-2xl flex items-center justify-center text-slate-950 text-2xl shadow-lg animate-bounce">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+      <div class="inline-block bg-amber-950 border border-amber-500 text-amber-300 text-xs px-3 py-1 rounded-full font-bold mb-2 font-orbitron" id="giftBadgeText">
+        HERO LOOT CRATE 📦
+      </div>
+      <h3 id="giftTitle" class="text-base sm:text-lg font-black text-amber-300 mb-2">غنائم السايبر البطولية!</h3>
+      <p id="giftDesc" class="text-xs sm:text-sm text-slate-300 mb-4 font-semibold leading-relaxed">
+        شرح المكافأة
+      </p>
+
+      <!-- Two Chests Option -->
+      <div id="giftInteractiveContainer" class="hidden mb-4">
+        <p id="giftChestPrompt" class="text-xs text-cyan-300 font-bold mb-2">اختر أحد الصندوقين المشفرين لكشف غنيمتك:</p>
+        <div class="grid grid-cols-2 gap-3" id="giftChests">
+          <button onclick="revealChest(1)" class="group bg-slate-950 border-2 border-cyan-400 hover:border-cyan-300 p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:scale-105 transition shadow-lg">
+            <span class="text-3xl group-hover:rotate-12 transition">⚡</span>
+            <span id="chestBtn1Text" class="text-xs font-black text-cyan-300 font-orbitron">صندوق الليزر</span>
+          </button>
+          <button onclick="revealChest(2)" class="group bg-slate-950 border-2 border-amber-400 hover:border-amber-300 p-4 rounded-2xl flex flex-col items-center gap-1.5 hover:scale-105 transition shadow-lg">
+            <span class="text-3xl group-hover:-rotate-12 transition">🛡️</span>
+            <span id="chestBtn2Text" class="text-xs font-black text-amber-300 font-orbitron">صندوق التيتانيوم</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="giftActionArea">
+        <button id="giftClaimBtn" onclick="claimStandardGift()" class="w-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 text-slate-950 font-black py-3 rounded-2xl shadow-lg transition active:scale-95">
+          استلام الغنيمة وشحن الدروع ⚡
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CYBER TRAP MODAL -->
+  <div id="trapModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-4 border-rose-500 rounded-3xl shadow-2xl max-w-md w-full p-5 sm:p-6 text-center">
+      <div class="w-14 h-14 mx-auto mb-2 bg-gradient-to-tr from-rose-600 to-red-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="inline-block bg-rose-950 border border-rose-500 text-rose-300 text-xs px-3 py-1 rounded-full font-bold mb-2 font-orbitron">
+        DANGER: CYBER TRAP ⚠️
+      </div>
+      <h3 id="trapTitle" class="text-base sm:text-lg font-black text-rose-400 mb-1">تحذير! فخ إلكتروني</h3>
+      <p id="trapDesc" class="text-xs sm:text-sm text-slate-300 mb-4 font-semibold leading-relaxed">
+        شرح الفخ وتأثيره
+      </p>
+
+      <div id="trapRescueArea" class="hidden mb-4 p-3 bg-slate-950 rounded-2xl border border-rose-500/50">
+        <p id="trapRescuePrompt" class="text-xs font-bold text-rose-300 mb-2 font-orbitron">
+          حل الشفرة الخاطفة لتفادي فقدان القطعة:
+        </p>
+        <div class="flex gap-2">
+          <input type="number" id="trapRescueInput" placeholder="?" class="w-full text-center p-2 rounded-xl bg-slate-900 border border-rose-400 text-white font-black text-base focus:outline-none focus:ring-2 focus:ring-rose-400 font-orbitron" dir="ltr">
+          <button id="btnBreakCode" onclick="checkTrapRescue()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 rounded-xl font-bold text-xs transition">كسر الشفرة</button>
+        </div>
+      </div>
+
+      <button id="trapCloseBtn" onclick="closeModal('trapModal')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-2xl transition">
+        استمرار المهمة
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. HERO CHALLENGE / RULE MODAL -->
+  <div id="ruleModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-4 border-purple-500 rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 text-center">
+      <div class="w-14 h-14 mx-auto mb-2 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">
+        <i class="fa-solid fa-scroll"></i>
+      </div>
+      <div class="inline-block bg-purple-950 border border-purple-400 text-purple-300 text-xs px-3 py-1 rounded-full font-bold mb-2 font-orbitron">
+        HERO CHALLENGE ⚡
+      </div>
+      <h3 id="ruleTitle" class="text-base sm:text-lg font-black text-purple-300 mb-1">أمر عمليات حماسي</h3>
+      <p id="ruleDesc" class="text-xs sm:text-sm text-slate-300 mb-4 font-semibold leading-relaxed">
+        نص الحكم المطلوب تنفيذه
+      </p>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-purple-500/50 mb-4 text-start">
+        <p id="ruleTaskLabel" class="text-xs text-purple-300 font-bold mb-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-bullhorn"></i> المهمة المطلوبة بصوت مقاتل خارق:
+        </p>
+        <p id="ruleTaskText" class="text-xs sm:text-sm text-purple-100 font-bold leading-relaxed">
+          نص المهمة
+        </p>
+      </div>
+
+      <button id="ruleDoneBtn" onclick="acceptRuleChallenge()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black py-3 rounded-2xl shadow-lg transition active:scale-95">
+        تم تنفيذ الأمر البطولي بنجاح! ⚔️
+      </button>
+    </div>
+  </div>
+
+  <!-- 5. VICTORY TITAN ACTIVATION MODAL -->
+  <div id="winModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border-8 border-cyan-400 rounded-3xl shadow-2xl max-w-md w-full p-6 text-center relative overflow-hidden">
+      <div class="text-6xl mb-2">🤖⚡🏆</div>
+      <h2 class="text-2xl font-black text-cyan-300 font-orbitron mb-1">TITAN FULLY ONLINE!</h2>
+      <h3 id="winTitle" class="text-base font-bold text-amber-300 mb-3">اكتمل المحارب الآلي الخارق بجميع أجزائه الـ 15!</h3>
+      <p id="winDesc" class="text-xs sm:text-sm text-slate-300 mb-4 leading-relaxed font-semibold">
+        ألف مبروك يا بطل! لقد أثبت براعتك وسرعتك الفائقة في جدول الضرب وهزمت جميع الفخاخ والأحكام باحتراف!
+      </p>
+      <div class="p-2 mb-4 bg-slate-950 rounded-xl border border-cyan-500/40 text-xs text-cyan-300 font-bold">
+        Designed by: Dr. Mohsen El-Khashef | د. محسن الكاشف
+      </div>
+      <button id="winRestartBtn" onclick="resetGame()" class="w-full bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-300 text-slate-950 font-black py-3 rounded-2xl shadow-lg transition font-orbitron">
+        RESTART MISSION 🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT GAME LOGIC & I18N ================= -->
+  <script>
+    // Current Active Language
+    let currentLang = 'ar'; // 'ar', 'tr', 'ru'
+
+    // Localized Strings Dictionary
+    const I18N = {
+      ar: {
+        dir: 'rtl',
+        fontClass: 'lang-ar',
+        credits: 'تصميم وإشراف: د. محسن الكاشف | Designed by: Dr. Mohsen El-Khashef',
+        title: 'تحدي الأبطال: مصنع المحارب الآلي',
+        subtitle: 'أتقن جدول الضرب! اجمع 15 قطعة درع ميكانيكية لتشغيل البطل الآلي العملاق ⚡',
+        shieldActive: 'درع الطاقة نشط',
+        heroRuleActive: 'مهمة بطولية',
+        piecesLabel: 'دروع التايتن',
+        mechaBayTitle: 'حجرة تجميع المحارب الآلي (15 درعاً)',
+        gridTitle: 'مصفوفة طاقة السايبر (36 كارت - 6×6)',
+        gridSub: 'المس أي بطاقة لبدء التحدي الحسابي أو كشف المكافأة',
+        legQ: 'ضرب (16)',
+        legLoot: 'غنائم (7)',
+        legRule: 'أحكام (6)',
+        legTrap: 'فخاخ (7)',
+        cardUnlock: 'فتح ⚡',
+        qModalTopic: 'تحدي جدول الضرب',
+        qModalTitle: 'مسألة شحن المفاعل',
+        qModalSub: 'احسب المسألة ذهنياً واختر الإجابة الصحيحة لإضافة درع للروبوت:',
+        qCloseBtn: 'متابعة المعركة ⚡',
+        lootBadge: 'صندوق الغنائم البطولية 📦',
+        chestPrompt: 'اختر أحد الصندوقين المشفرين لكشف غنيمتك:',
+        chest1: 'صندوق الليزر',
+        chest2: 'صندوق التيتانيوم',
+        lootClaimBtn: 'استلام الغنيمة وشحن الدروع ⚡',
+        trapDanger: 'تحذير: فخ إلكتروني ⚠️',
+        trapTitle: 'تحذير! فخ إلكتروني',
+        trapRescuePrompt: 'حل الشفرة الخاطفة لتفادي فقدان القطعة:',
+        btnBreakCode: 'كسر الشفرة',
+        trapContinue: 'استمرار المهمة',
+        ruleChallengeBadge: 'أمر عمليات حماسي ⚡',
+        ruleTaskLabel: 'المهمة المطلوبة بصوت مقاتل خارق:',
+        ruleDoneBtn: 'تم تنفيذ الأمر البطولي بنجاح! ⚔️',
+        winTitle: 'اكتمل المحارب الآلي الخارق بجميع أجزائه الـ 15!',
+        winDesc: 'ألف مبروك يا بطل! لقد أثبت براعتك وسرعتك الفائقة في جدول الضرب وهزمت جميع الفخاخ باحتراف!',
+        winRestart: 'بدء مهمة جديدة 🔄',
+        shieldAbsorbTrap: 'درع الطاقة امتص الصدمة بالكامل وحماك من فقدان أي درع!',
+        rescueSuccess: 'كسر شفرة أسطوري! تم إحباط الفخ بنجاح وحماية دروع الروبوت! ⚡',
+        rescueFail: 'شفرة خاطئة! الناتج الصحيح هو: ',
+        toastReset: 'تمت إعادة تهيئة مصنع الروبوت وجاهز لجولة جديدة! ⚡',
+        toastRuleDone: 'أحسنت يا بطل! تم تنفيذ المهمة البطولية بكفاءة ⚔️',
+        turboActivated: 'تم تطبيق شاحن التيربو! حصلت على درعين للروبوت! 🚀',
+        shieldGranted: 'درع الطاقة الإلكتروني جاهز لصد الفخاخ! 🛡️',
+        turboNextGranted: 'تم تفعيل شاحن التيربو المزدوج للمسألة القادمة! ⚡',
+        rulesCleared: 'تم إسقاط جميع الأحكام وكسب درع إضافي! 🚀',
+        wingsInstalled: 'تم تفعيل أجنحة الطاقة الليزرية العملاقة! 🦅',
+        armorAdded: 'تم تركيب درع جديد بنجاح في المحارب الآلي! 🤖',
+        partDamaged: 'أوبس! تم تضرر الدرع رقم ',
+        hints: [
+          '⚡ افتح بطاقات الطاقة الـ 36، حل مسائل الضرب واشحن دروع المحارب الآلي!',
+          '🦾 بداية قوية! تم تركيب {n} من 15 درعاً. واصل المعركة!',
+          '⚡ مذهل! مفاعل التايتن يوشك على الاشتعال الكامل ({n}/15 درعاً)!',
+          '🔥 درع واحد فقط ويدخل المحارب الآلي الخدمة بكامل قوته!',
+          '🏆 المحارب الآلي الخارق في كامل طاقته القتالية! نصر أسطوري!'
+        ]
+      },
+      tr: {
+        dir: 'ltr',
+        fontClass: 'lang-tr',
+        credits: 'Tasarım ve Yönetim: Dr. Mohsen El-Khashef | د. محسن الكاشف',
+        title: 'Kahramanlar Meydanı: Siber Meka Fabrikası',
+        subtitle: 'Çarpım tablosunda ustalaş! Dev robotu çalıştırmak için 15 mekanik zırhı topla ⚡',
+        shieldActive: 'Güç Kalkanı Aktif',
+        heroRuleActive: 'Kahramanlık Görevi',
+        piecesLabel: 'TITAN ZIRHLARI',
+        mechaBayTitle: 'Meka Montaj Hangarı (15 Parça)',
+        gridTitle: 'Siber Enerji Matrisi (36 Kart - 6×6)',
+        gridSub: 'Hesaplama mücadelesi veya ödülleri açmak için herhangi bir karta dokun',
+        legQ: 'Çarpma (16)',
+        legLoot: 'Ganimet (7)',
+        legRule: 'Kurallar (6)',
+        legTrap: 'Tuzak (7)',
+        cardUnlock: 'AÇ ⚡',
+        qModalTopic: 'ÇARPIM TABLOSU MÜCADELESİ',
+        qModalTitle: 'Reaktör Güçlendirme Sorusu',
+        qModalSub: 'Zihinden hesapla ve robota zırh eklemek için doğru cevabı seç:',
+        qCloseBtn: 'Savaşa Devam Et ⚡',
+        lootBadge: 'KAHRAMAN GANİMET SANDIĞI 📦',
+        chestPrompt: 'Ganimetini ortaya çıkarmak için şifreli iki sandıktan birini seç:',
+        chest1: 'Lazer Sandığı',
+        chest2: 'Titanyum Sandığı',
+        lootClaimBtn: 'Ganimeti Al ve Zırhları Doldur ⚡',
+        trapDanger: 'TEHLİKE: SİBER TUZAK ⚠️',
+        trapTitle: 'Dikkat! Elektronik Tuzak',
+        trapRescuePrompt: 'Zırh kaybetmemek için acil şifreyi çöz:',
+        btnBreakCode: 'Şifreyi Kır',
+        trapContinue: 'Görevi Sürdür',
+        ruleChallengeBadge: 'KAHRAMANLIK EMRİ ⚡',
+        ruleTaskLabel: 'Bir süper savaşçı sesiyle yapılması gereken görev:',
+        ruleDoneBtn: 'Kahramanlık Emri Başarıyla Yerine Getirildi! ⚔️',
+        winTitle: 'SİBER MEKA TİTANI 15 PARÇAYLA TAMAMLANDI!',
+        winDesc: 'Tebrikler şampiyon! Çarpım tablosundaki ustalığını kanıtladın ve tüm tuzakları alt ettin!',
+        winRestart: 'YENİDEN BAŞLAT 🔄',
+        shieldAbsorbTrap: 'Güç kalkanı darbeyi tamamen emdi ve zırh kaybını önledi!',
+        rescueSuccess: 'Efsanevi şifre kırma! Tuzak etkisiz hale getirildi ve zırh korundu! ⚡',
+        rescueFail: 'Hatalı şifre! Doğru sonuç: ',
+        toastReset: 'Meka fabrikası sıfırlandı ve yeni görev için hazır! ⚡',
+        toastRuleDone: 'Aferin kahraman! Görevi başarıyla tamamladın ⚔️',
+        turboActivated: 'Turbo güçlendirici aktif! Robota 2 zırh eklendi! 🚀',
+        shieldGranted: 'Siber güç kalkanı tuzakları engellemeye hazır! 🛡️',
+        turboNextGranted: 'Sıradaki soru için çift zırh turbosu aktif edildi! ⚡',
+        rulesCleared: 'Tüm kurallar kaldırıldı ve fazladan bir zırh kazanıldı! 🚀',
+        wingsInstalled: 'Dev lazer kanatları başarıyla monte edildi! 🦅',
+        armorAdded: 'Meka robota yeni bir zırh başarıyla monte edildi! 🤖',
+        partDamaged: 'Eyvah! Zırh parçası hasar gördü: #',
+        hints: [
+          '⚡ 36 enerji kartını aç, çarpma işlemlerini çöz ve robotun zırhlarını şarj et!',
+          '🦾 Harika başlangıç! 15 zırhtan {n} tanesi toplandı. Savaşa devam!',
+          '⚡ İnanılmaz! Titan reaktörü neredeyse tam güçte ({n}/15 zırh)!',
+          '🔥 Sadece tek bir zırh kaldı ve Meka Titan göreve hazır!',
+          '🏆 Siber Meka Titan tam savaş gücünde! Efsanevi bir zafer!'
+        ]
+      },
+      ru: {
+        dir: 'ltr',
+        fontClass: 'lang-ru',
+        credits: 'Дизайн и руководство: Д-р Мохсен Эль-Кашеф | Dr. Mohsen El-Khashef',
+        title: 'Битва Героев: Фабрика Кибер-Меха',
+        subtitle: 'Освой таблицу умножения! Собери 15 деталей брони для запуска гигантского Титана ⚡',
+        shieldActive: 'Энергощит активен',
+        heroRuleActive: 'Боевая задача',
+        piecesLabel: 'БРОНЯ ТИТАНА',
+        mechaBayTitle: 'Ангар сборки Меха (15 элементов)',
+        gridTitle: 'Матрица Кибер-Энергии (36 карт - 6×6)',
+        gridSub: 'Коснись любой карты для решения примера или получения трофея',
+        legQ: 'Умножение (16)',
+        legLoot: 'Трофеи (7)',
+        legRule: 'Приказы (6)',
+        legTrap: 'Ловушки (7)',
+        cardUnlock: 'ОТКРЫТЬ ⚡',
+        qModalTopic: 'ТАБЛИЦА УМНОЖЕНИЯ',
+        qModalTitle: 'Зарядка Реактора Меха',
+        qModalSub: 'Посчитай в уме и выбери верный ответ для установки брони:',
+        qCloseBtn: 'Продолжить Битву ⚡',
+        lootBadge: 'БОЕВОЙ ТРОФЕЙНЫЙ ЯЩИК 📦',
+        chestPrompt: 'Выбери один из зашифрованных ящиков для получения награды:',
+        chest1: 'Лазерный ящик',
+        chest2: 'Титановый ящик',
+        lootClaimBtn: 'Забрать трофей и зарядить броню ⚡',
+        trapDanger: 'ОПАСНОСТЬ: КИБЕР-ЛОВУШКА ⚠️',
+        trapTitle: 'Внимание! Электронная ловушка',
+        trapRescuePrompt: 'Реши пример-код, чтобы не потерять деталь брони:',
+        btnBreakCode: 'Взломать код',
+        trapContinue: 'Продолжить миссию',
+        ruleChallengeBadge: 'БОЕВОЙ ПРИКАЗ ⚡',
+        ruleTaskLabel: 'Боевое задание голосом супергероя:',
+        ruleDoneBtn: 'Боевой приказ успешно выполнен! ⚔️',
+        winTitle: 'КИБЕР МЕХА ТИТАН ПОЛНОСТЬЮ СОБРАН (15/15)!',
+        winDesc: 'Поздравляем, герой! Ты блестяще доказал знание таблицы умножения и победил все ловушки!',
+        winRestart: 'НАЧАТЬ ЗАНОВО 🔄',
+        shieldAbsorbTrap: 'Энергощит поглотил удар и спас твою броню от повреждения!',
+        rescueSuccess: 'Код взломан! Ловушка обезврежена, броня спасена! ⚡',
+        rescueFail: 'Неверный код! Правильный ответ: ',
+        toastReset: 'Фабрика роботов перезапущена и готова к бою! ⚡',
+        toastRuleDone: 'Молодец, боец! Боевой приказ выполнен на отлично ⚔️',
+        turboActivated: 'Турбо-заряд активирован! Добавлено сразу 2 детали брони! 🚀',
+        shieldGranted: 'Энергощит активирован для блокировки ловушек! 🛡️',
+        turboNextGranted: 'Двойной заряд активирован на следующий вопрос! ⚡',
+        rulesCleared: 'Все приказы сняты, получена дополнительная броня! 🚀',
+        wingsInstalled: 'Гипер-крылья энергии успешно установлены! 🦅',
+        armorAdded: 'Новая деталь брони успешно установлена на Меха! 🤖',
+        partDamaged: 'Ой! Повреждена деталь брони №',
+        hints: [
+          '⚡ Открывай 36 энергокарт, решай примеры на умножение и заряжай броню Меха!',
+          '🦾 Отличное начало! Установлено {n} из 15 деталей. В бой!',
+          '⚡ Невероятно! Реактор Титана почти заряжен на полную мощь ({n}/15 деталей)!',
+          '🔥 Осталась всего 1 деталь, и Кибер Меха вступит в строй!',
+          '🏆 Кибер Меха Титан в полной боевой готовности! Легендарная победа!'
+        ]
+      }
+    };
+
+    // Sound Synthesizer via Web Audio API
+    const SoundFX = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) this.ctx = new AudioContextClass();
+        }
+      },
+      play(type) {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          if (this.ctx.state === 'suspended') this.ctx.resume();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          if (type === 'laserCorrect') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(350, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.22);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+          } else if (type === 'errorBuzzer') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.setValueAtTime(110, now + 0.15);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc.start(now);
+            osc.stop(now + 0.35);
+          } else if (type === 'loot') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.08);
+            osc.frequency.setValueAtTime(783.99, now + 0.16);
+            osc.frequency.setValueAtTime(1046.50, now + 0.24);
+            gain.gain.setValueAtTime(0.28, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+            osc.start(now);
+            osc.stop(now + 0.55);
+          } else if (type === 'titanVictory') {
+            [0, 0.12, 0.24, 0.38, 0.55].forEach((delay, i) => {
+              const o = this.ctx.createOscillator();
+              const g = this.ctx.createGain();
+              o.connect(g);
+              g.connect(this.ctx.destination);
+              const notes = [440, 554.37, 659.25, 880, 1108.7];
+              o.frequency.value = notes[i];
+              g.gain.setValueAtTime(0.22, now + delay);
+              g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.4);
+              o.start(now + delay);
+              o.stop(now + delay + 0.4);
+            });
+          }
+        } catch (e) {
+          console.warn('Audio pending click:', e);
+        }
+      }
+    };
+
+    // ==========================================
+    // 16 MULTIPLICATION QUESTIONS (Localized)
+    // ==========================================
+    const QUESTIONS_16 = [
+      {
+        id: "m1",
+        prompt: "6 × 7 = ?",
+        options: ["42", "48", "36", "49"],
+        correct: 0,
+        exp: {
+          ar: "6 × 7 = 42 (ستة في سبعة يساوي اثنين وأربعين).",
+          tr: "6 × 7 = 42 (Altı kere yedi kırk iki eder).",
+          ru: "6 × 7 = 42 (Шестью семь — сорок два)."
+        }
+      },
+      {
+        id: "m2",
+        prompt: "8 × 8 = ?",
+        options: ["56", "64", "72", "68"],
+        correct: 1,
+        exp: {
+          ar: "8 × 8 = 64 (ثمانية في ثمانية يساوي أربعة وستين).",
+          tr: "8 × 8 = 64 (Sekiz kere sekiz altmış dört eder).",
+          ru: "8 × 8 = 64 (Восемью восемь — шестьдесят четыре)."
+        }
+      },
+      {
+        id: "m3",
+        prompt: "7 × 8 = ?",
+        options: ["54", "56", "63", "48"],
+        correct: 1,
+        exp: {
+          ar: "7 × 8 = 56 (سبعة في ثمانية يساوي ستة وخمسين).",
+          tr: "7 × 8 = 56 (Yedi kere sekiz elli altı eder).",
+          ru: "7 × 8 = 56 (Семью восемь — пятьдесят шесть)."
+        }
+      },
+      {
+        id: "m4",
+        prompt: "9 × 6 = ?",
+        options: ["54", "63", "45", "56"],
+        correct: 0,
+        exp: {
+          ar: "9 × 6 = 54 (تسعة في ستة يساوي أربعة وخمسين).",
+          tr: "9 × 6 = 54 (Dokuz kere altı elli dört eder).",
+          ru: "9 × 6 = 54 (Девятью шесть — пятьдесят четыре)."
+        }
+      },
+      {
+        id: "m5",
+        prompt: "9 × 8 = ?",
+        options: ["81", "72", "64", "76"],
+        correct: 1,
+        exp: {
+          ar: "9 × 8 = 72 (تسعة في ثمانية يساوي اثنين وسبعين).",
+          tr: "9 × 8 = 72 (Dokuz kere sekiz yetmiş iki eder).",
+          ru: "9 × 8 = 72 (Девятью восемь — семьдесят два)."
+        }
+      },
+      {
+        id: "m6",
+        prompt: "7 × 7 = ?",
+        options: ["42", "49", "56", "47"],
+        correct: 1,
+        exp: {
+          ar: "7 × 7 = 49 (سبعة في سبعة يساوي تسعة وأربعين).",
+          tr: "7 × 7 = 49 (Yedi kere yedi kırk dokuz eder).",
+          ru: "7 × 7 = 49 (Семью семь — сорок девять)."
+        }
+      },
+      {
+        id: "m7",
+        prompt: "4 × 9 = ?",
+        options: ["36", "32", "38", "42"],
+        correct: 0,
+        exp: {
+          ar: "4 × 9 = 36 (أربعة في تسعة يساوي ستة وثلاثين).",
+          tr: "4 × 9 = 36 (Dört kere dokuz otuz altı eder).",
+          ru: "4 × 9 = 36 (Четырьмя девять — тридцать шесть)."
+        }
+      },
+      {
+        id: "m8",
+        prompt: "8 × 6 = ?",
+        options: ["46", "48", "54", "42"],
+        correct: 1,
+        exp: {
+          ar: "8 × 6 = 48 (ثمانية في ستة يساوي ثمانية وأربعين).",
+          tr: "8 × 6 = 48 (Sekiz kere altı kırk sekiz eder).",
+          ru: "8 × 6 = 48 (Восемью шесть — сорок восемь)."
+        }
+      },
+      {
+        id: "m9",
+        prompt: "3 × 9 = ?",
+        options: ["27", "24", "29", "31"],
+        correct: 0,
+        exp: {
+          ar: "3 × 9 = 27 (ثلاثة في تسعة يساوي سبعة وعشرين).",
+          tr: "3 × 9 = 27 (Üç kere dokuz yirmi yedi eder).",
+          ru: "3 × 9 = 27 (Тремя девять — двадцать семь)."
+        }
+      },
+      {
+        id: "m10",
+        prompt: "6 × 6 = ?",
+        options: ["32", "36", "42", "30"],
+        correct: 1,
+        exp: {
+          ar: "6 × 6 = 36 (ستة في ستة يساوي ستة وثلاثين).",
+          tr: "6 × 6 = 36 (Altı kere altı otuz altı eder).",
+          ru: "6 × 6 = 36 (Шестью шесть — тридцать шесть)."
+        }
+      },
+      {
+        id: "m11",
+        prompt: "9 × 7 = ?",
+        options: ["63", "56", "72", "67"],
+        correct: 0,
+        exp: {
+          ar: "9 × 7 = 63 (تسعة في سبعة يساوي ثلاثة وستين).",
+          tr: "9 × 7 = 63 (Dokuz kere yedi altmış üç eder).",
+          ru: "9 × 7 = 63 (Девятью семь — шестьдесят три)."
+        }
+      },
+      {
+        id: "m12",
+        prompt: "8 × 4 = ?",
+        options: ["28", "32", "36", "34"],
+        correct: 1,
+        exp: {
+          ar: "8 × 4 = 32 (ثمانية في أربعة يساوي اثنين وثلاثين).",
+          tr: "8 × 4 = 32 (Sekiz kere dört otuz iki eder).",
+          ru: "8 × 4 = 32 (Восемью четыре — тридцать два)."
+        }
+      },
+      {
+        id: "m13",
+        prompt: "7 × 4 = ?",
+        options: ["28", "24", "32", "26"],
+        correct: 0,
+        exp: {
+          ar: "7 × 4 = 28 (سبعة في أربعة يساوي ثمانية وعشرين).",
+          tr: "7 × 4 = 28 (Yedi kere dört yirmi sekiz eder).",
+          ru: "7 × 4 = 28 (Семью четыре — двадцать восемь)."
+        }
+      },
+      {
+        id: "m14",
+        prompt: "9 × 9 = ?",
+        options: ["72", "81", "90", "89"],
+        correct: 1,
+        exp: {
+          ar: "9 × 9 = 81 (تسعة في تسعة يساوي واحد وثمانين).",
+          tr: "9 × 9 = 81 (Dokuz kere dokuz seksen bir eder).",
+          ru: "9 × 9 = 81 (Девятью девять — восемьдесят один)."
+        }
+      },
+      {
+        id: "m15",
+        prompt: "11 × 6 = ?",
+        options: ["66", "60", "77", "65"],
+        correct: 0,
+        exp: {
+          ar: "11 × 6 = 66 (أحد عشر في ستة يساوي ستة وستين).",
+          tr: "11 × 6 = 66 (On bir kere altı altmış altı eder).",
+          ru: "11 × 6 = 66 (Одиннадцатью шесть — шестьдесят шесть)."
+        }
+      },
+      {
+        id: "m16",
+        prompt: "12 × 5 = ?",
+        options: ["50", "60", "65", "55"],
+        correct: 1,
+        exp: {
+          ar: "12 × 5 = 60 (اثنا عشر في خمسة يساوي ستين).",
+          tr: "12 × 5 = 60 (On iki kere beş altmış eder).",
+          ru: "12 × 5 = 60 (Двенадцатью пять — шестьдесят)."
+        }
+      }
+    ];
+
+    // ==========================================
+    // 7 REWARDS / LOOT (Localized)
+    // ==========================================
+    const GIFTS_7 = [
+      {
+        id: "g1",
+        actionType: "free_piece",
+        title: { ar: "درع ميكانيكي فوري! 🤖", tr: "Anında Meka Zırhı! 🤖", ru: "Мгновенная броня Меха! 🤖" },
+        desc: {
+          ar: "صندوق إمدادات عاجل! حصلت على درع فوري وركب في المحارب الآلي دون الحاجة لمسألة!",
+          tr: "Acil ikmal sandığı! Soruya gerek kalmadan robota yeni bir zırh monte edildi!",
+          ru: "Срочный ящик снабжения! Получена и установлена деталь брони без решения вопроса!"
+        }
+      },
+      {
+        id: "g2",
+        actionType: "grant_shield",
+        title: { ar: "درع الطاقة الإلكتروني 🛡️", tr: "Elektronik Güç Kalkanı 🛡️", ru: "Электронный Энергощит 🛡️" },
+        desc: {
+          ar: "حقل طاقة كهرومغناطيسي يحميك بالكامل من الفخ القادم ويلغي تأثيره تماماً!",
+          tr: "Seni bir sonraki tuzaktan tamamen koruyan ve etkisini sıfırlayan koruma kalkanı!",
+          ru: "Электромагнитное поле, которое полностью защитит от следующей ловушки!"
+        }
+      },
+      {
+        id: "g3",
+        actionType: "two_chests",
+        title: { ar: "صندوق الغنائم المزدوج (اختر 1 من 2) 📦", tr: "Çift Ganimet Sandığı (1 Seç) 📦", ru: "Двойной Трофейный Ящик (1 из 2) 📦" },
+        desc: {
+          ar: "أمامك صندوقان مشفران: صندوق الليزر وصندوق التيتانيوم. اختر واحداً لكشف غنيمتك!",
+          tr: "Önünde iki şifreli sandık var: Lazer Sandığı ve Titanyum Sandığı. Birini seç!",
+          ru: "Перед тобой два зашифрованных ящика: Лазерный и Титановый. Выбери один!"
+        }
+      },
+      {
+        id: "g4",
+        actionType: "double_next",
+        title: { ar: "شاحن التيربو المزدوج ⚡", tr: "Çift Turbo Güçlendirici ⚡", ru: "Турбо-Удвоитель Брони ⚡" },
+        desc: {
+          ar: "إجابتك الصحيحة على المسألة القادمة ستمنحك درعين ميكانيكيين دفعة واحدة!",
+          tr: "Sıradaki soruya vereceğin doğru cevap robota tek seferde 2 zırh kazandıracak!",
+          ru: "Правильный ответ на следующий вопрос принесет сразу 2 детали брони!"
+        }
+      },
+      {
+        id: "g5",
+        actionType: "clear_rule_and_piece",
+        title: { ar: "تجاوز الأحكام وعفو المعركة 🚀", tr: "Kuralları Kaldır ve Zırh Al 🚀", ru: "Снятие приказов и Бонус 🚀" },
+        desc: {
+          ar: "تم إلغاء أي حكم عسكري نشط ومنحك درع إضافي تقديراً لشجاعتك وسرعتك!",
+          tr: "Tüm aktif kurallar iptal edildi ve cesaretin için fazladan bir zırh hediye edildi!",
+          ru: "Все активные приказы отменены, и добавлена бонусная деталь брони!"
+        }
+      },
+      {
+        id: "g6",
+        actionType: "wings_piece",
+        title: { ar: "أجنحة الطاقة الخلفية المباشرة! 🦅", tr: "Doğrudan Enerji Kanatları! 🦅", ru: "Мгновенные Гипер-Крылья! 🦅" },
+        desc: {
+          ar: "ترقية أسطورية فورية! تم تركيب أجنحة الطاقة الليزرية العملاقة على ظهر الروبوت مباشرة!",
+          tr: "Efsanevi anlık yükseltme! Robotun arkasına dev lazer kanatları monte edildi!",
+          ru: "Легендарный мгновенный апгрейд! На спину робота установлены энерго-крылья!"
+        }
+      },
+      {
+        id: "g7",
+        actionType: "free_piece",
+        title: { ar: "شحنة بطارية المفاعل القصوى 🔋", tr: "Maksimum Reaktör Şarjı 🔋", ru: "Максимальный Заряд Реактора 🔋" },
+        desc: {
+          ar: "دفعة طاقة هائلة تضيف درعاً جديداً فوراً وتزيد من نسبة جاهزية المحارب الآلي!",
+          tr: "Robota anında yeni bir zırh ekleyen ve savaşa hazırlayan devasa bir enerji darbesi!",
+          ru: "Мощный всплеск энергии, устанавливающий новую деталь на боевого Меха!"
+        }
+      }
+    ];
+
+    // ==========================================
+    // 7 CYBER TRAPS (Localized with Quick Math Rescue)
+    // ==========================================
+    const TRAPS_7 = [
+      {
+        id: "t1",
+        rescueMath: { q: "5 × 6", ans: 30 },
+        title: { ar: "فخ تشويش رادار المعركة! 📡", tr: "Radar Karıştırma Tuzağı! 📡", ru: "Помехи Боевого Радара! 📡" },
+        desc: {
+          ar: "احترس! كاد التشويش يفصل درعاً! حل شفرة الضرب السريعة لإنقاذ الدرع:",
+          tr: "Dikkat! Parazit zırhı devre dışı bırakmak üzere! Zırhı kurtarmak için kodu çöz:",
+          ru: "Внимание! Помехи грозят отсоединить броню! Реши пример и спаси деталь:"
+        }
+      },
+      {
+        id: "t2",
+        rescueMath: { q: "4 × 7", ans: 28 },
+        title: { ar: "فخ ليزر الحماية الدفاعي! ⚡", tr: "Savunma Lazeri Tuzağı! ⚡", ru: "Защитный Лазерный Сбой! ⚡" },
+        desc: {
+          ar: "انطلق شعاع ليزري مفاجئ! اكتب ناتج الضرب التالي فوراً لتعطيل الإنذار:",
+          tr: "Beklenmedik bir lazer ışını tetiklendi! Alarmı kapatmak için sonucu hemen yaz:",
+          ru: "Внезапный лазерный импульс! Быстро введи результат, чтобы снять тревогу:"
+        }
+      },
+      {
+        id: "t3",
+        rescueMath: { q: "8 × 3", ans: 24 },
+        title: { ar: "فخ الصدمة المغناطيسية! 🧲", tr: "Manyetik Şok Tuzağı! 🧲", ru: "Магнитная Ловушка! 🧲" },
+        desc: {
+          ar: "مجال مغناطيسي يحاول سحب سلاح الروبوت! اكسر الشفرة السريعة للنجاة:",
+          tr: "Manyetik alan silahı çekmeye çalışıyor! Kurtulmak için hızlı şifreyi kır:",
+          ru: "Магнитное поле пытается сорвать оружие! Взломай защитный код:"
+        }
+      },
+      {
+        id: "t4",
+        rescueMath: { q: "7 × 6", ans: 42 },
+        title: { ar: "فخ ارتفاع حرارة المفاعل! 🔥", tr: "Aşırı Isınma Tuzağı! 🔥", ru: "Перегрев Реактора! 🔥" },
+        desc: {
+          ar: "ارتفعت حرارة التوربينات! أجب سريعاً لتشغيل نظام التبريد الطارئ:",
+          tr: "Türbinler aşırı ısındı! Acil soğutma sistemini başlatmak için hemen cevapla:",
+          ru: "Турбины перегреваются! Быстро реши пример для включения охлаждения:"
+        }
+      },
+      {
+        id: "t5",
+        rescueMath: { q: "9 × 4", ans: 36 },
+        title: { ar: "فخ هاكر الفضاء السيبراني! 💻", tr: "Siber Korsan Tuzağı! 💻", ru: "Атака Кибер-Хакеров! 💻" },
+        desc: {
+          ar: "محاولة اختراق لمنظومة الدروع! ادخل رمز فك التشفير الحسابي للنجاة:",
+          tr: "Zırh sistemine sızma girişimi! Kurtulmak için matematiksel kilit kodunu gir:",
+          ru: "Попытка взлома брони! Введи математический ключ доступа:"
+        }
+      },
+      {
+        id: "t6",
+        rescueMath: { q: "6 × 8", ans: 48 },
+        title: { ar: "فخ عاصفة النيازك! ☄️", tr: "Göktaşı Fırtınası Tuzağı! ☄️", ru: "Метеоритный Шторм! ☄️" },
+        desc: {
+          ar: "اصطدام نيزكي وشيك! احسب مناورة الهروب بالضرب السريع للنجاة:",
+          tr: "Göktaşı çarpması yakın! Kurtulmak için kaçış manevra kodunu hesapla:",
+          ru: "Опасность метеоритов! Рассчитай траекторию маневра через умножение:"
+        }
+      },
+      {
+        id: "t7",
+        rescueMath: { q: "8 × 7", ans: 56 },
+        title: { ar: "فخ الجاذبية العكسية! 🌌", tr: "Ters Yerçekimi Tuzağı! 🌌", ru: "Гравитационный Разлом! 🌌" },
+        desc: {
+          ar: "جاذبية مضادة تحاول تفكيك الأجزاء! ثبت المنظومة بحساب هذه المسألة:",
+          tr: "Ters yerçekimi parçaları sökmeye çalışıyor! Sistemi stabilize etmek için çöz:",
+          ru: "Гравитация пытается сорвать детали! Стабилизируй систему решением:"
+        }
+      }
+    ];
+
+    // ==========================================
+    // 6 HERO CHALLENGES / RULES (Localized)
+    // ==========================================
+    const RULES_6 = [
+      {
+        id: "r1",
+        title: { ar: "حكم صوت المقاتل: مضاعفات الـ 7! ⚔️", tr: "Savaşçı Sesi: 7'nin Katları! ⚔️", ru: "Голос Бойца: Кратные 7! ⚔️" },
+        desc: {
+          ar: "حكم بطولي حماسي: اسرد بصوت قوي وواضح مضاعفات العدد 7 حتى 42!",
+          tr: "Kahramanlık görevi: 7'nin 42'ye kadar olan katlarını güçlü bir sesle say!",
+          ru: "Боевое задание: громко и четко назови числа, кратные 7, до 42!"
+        },
+        task: {
+          ar: "قل بصوت بطل: (7، 14، 21، 28، 35، 42)!",
+          tr: "Güçlü bir sesle söyle: (7, 14, 21, 28, 35, 42)!",
+          ru: "Скажи уверенно: (7, 14, 21, 28, 35, 42)!"
+        }
+      },
+      {
+        id: "r2",
+        title: { ar: "حكم قفزات النينجا مع جدول 9! 🥷", tr: "Ninja Zıplaması ve 9 Tablosu! 🥷", ru: "Прыжки Ниндзя и Таблица 9! 🥷" },
+        desc: {
+          ar: "قف وافعل 5 قفزات رياضية وأنت تعد أول 5 نواتج لجدول 9!",
+          tr: "Ayağa kalk, 5 kez zıpla ve 9'un ilk 5 sonucunu sırayla söyle!",
+          ru: "Встань, сделай 5 прыжков, называя первые 5 ответов таблицы 9!"
+        },
+        task: {
+          ar: "اقفز وقل: (9 ، 18 ، 27 ، 36 ، 45) مع كل قفزة!",
+          tr: "Her zıplayışta söyle: (9, 18, 27, 36, 45)!",
+          ru: "Прыгай и считай: (9, 18, 27, 36, 45)!"
+        }
+      },
+      {
+        id: "r3",
+        title: { ar: "حكم الحساب الذهني الخاطف! 🧠", tr: "Yıldırım Zihinsel Hesaplama! 🧠", ru: "Молниеносный Счет в Уме! 🧠" },
+        desc: {
+          ar: "تحدي الذكاء: احسب ضعف ناتج 6 × 8 ذهنياً وبصوت مسموع!",
+          tr: "Zeka meydan okuması: 6 × 8 sonucunun iki katını zihinden hesapla ve sesli söyle!",
+          ru: "Интеллект-битва: вычисли удвоенный результат 6 × 8 вслух!"
+        },
+        task: {
+          ar: "قل بصوت واثق: 6×8 = 48، وضعف الـ 48 هو 96!",
+          tr: "Kendinden emin söyle: 6×8 = 48 ve 48'in iki katı 96'dır!",
+          ru: "Скажи четко: 6×8 = 48, а удвоенное 48 — это 96!"
+        }
+      },
+      {
+        id: "r4",
+        title: { ar: "حكم صرخة النصر للمحارب الآلي! 🤖", tr: "Meka Titan Zafer Haykırışı! 🤖", ru: "Боевой Клич Меха-Титан! 🤖" },
+        desc: {
+          ar: "قف وقفة محارب ميكا واهتف بجملة جدول 8 الشهيرة!",
+          tr: "Bir robot gibi dur ve 8 tablosu zafer sloganını haykır!",
+          ru: "Встань как несокрушимый Меха и выкрикни боевую фразу таблицы 8!"
+        },
+        task: {
+          ar: "اهتف بحماس: (8 في 8 بأربعة وستين.. أنا بطل جدول الضرب المتين)!",
+          tr: "Coşkuyla söyle: (Sekiz kere sekiz altmış dört.. Çarpım tablosunun kralı benim)!",
+          ru: "Крикни с драйвом: (Восемью восемь — шестьдесят четыре.. Я чемпион умножения в этом мире)!"
+        }
+      },
+      {
+        id: "r5",
+        title: { ar: "حكم تمرين القوة: تمرين السكوات! 🏋️", tr: "Güç Egzersizi: Squat Zamanı! 🏋️", ru: "Тренировка Силы: Приседания! 🏋️" },
+        desc: {
+          ar: "قم بعمل 3 تكرارات تمرين سكوات وأنت تنطق نواتج جدول 6 حتى 24!",
+          tr: "6 tablosunun 24'e kadar sonuçlarını sayarak 3 squat yap!",
+          ru: "Сделай 3 приседания, называя ответы таблицы 6 до 24!"
+        },
+        task: {
+          ar: "افعل سكوات وقل: (6 ، 12 ، 18 ، 24)!",
+          tr: "Squat yap ve söyle: (6, 12, 18, 24)!",
+          ru: "Приседай и считай: (6, 12, 18, 24)!"
+        }
+      },
+      {
+        id: "r6",
+        title: { ar: "حكم مدفع الليزر السريع! 🎯", tr: "Hızlı Lazer Nişancısı! 🎯", ru: "Снайпер Лазерной Пушки! 🎯" },
+        desc: {
+          ar: "وجّه إصبعك كمدفع ليزر وانطق حل مسألتين من اختيارك بسرعة البرق!",
+          tr: "Parmağını lazer topu gibi uzat ve seçeceğin 2 çarpma işlemini ışık hızında söyle!",
+          ru: "Направь руку как лазерную пушку и реши 2 любых примера за секунду!"
+        },
+        task: {
+          ar: "قل مثلاً: (9×3=27) و (7×5=35) في أقل من 5 ثوانٍ!",
+          tr: "Örnek: (9×3=27) ve (7×5=35) de, 5 saniyeden kısa sürede!",
+          ru: "Например: (9×3=27) и (7×5=35) быстрее чем за 5 секунд!"
+        }
+      }
+    ];
+
+    // Global State
+    let cardsDeck = [];
+    const unlockedPieces = new Set();
+    let hasShield = false;
+    let pendingRule = null;
+    let doubleNextPiece = false;
+    let activeCardIndex = null;
+    const TOTAL_PIECES = 15;
+
+    // Switch Language Dynamically
+    function setLanguage(lang) {
+      if (!I18N[lang]) return;
+      currentLang = lang;
+
+      // Update UI Direction & Font
+      const dict = I18N[lang];
+      document.getElementById('appBody').dir = dict.dir;
+      document.getElementById('appBody').className = `${dict.fontClass} p-2 sm:p-4 md:p-6 overflow-x-hidden`;
+
+      // Update Active Buttons
+      ['ar', 'tr', 'ru'].forEach(l => {
+        const btn = document.getElementById(`btnLang${l.charAt(0).toUpperCase() + l.slice(1)}`);
+        if (l === lang) {
+          btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition bg-cyan-500 text-slate-950 shadow';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:text-white';
+        }
+      });
+
+      // Update Static UI Texts
+      document.getElementById('creditBadge').textContent = dict.credits;
+      document.getElementById('uiFooterCredits').textContent = dict.credits;
+      document.getElementById('uiMainTitle').textContent = dict.title;
+      document.getElementById('uiSubTitle').textContent = dict.subtitle;
+      document.getElementById('shieldBadgeText').textContent = dict.shieldActive;
+      document.getElementById('ruleBadgeText').textContent = dict.heroRuleActive;
+      document.getElementById('uiPiecesLabel').textContent = dict.piecesLabel;
+      document.getElementById('uiMechaBayTitle').innerHTML = `<i class="fa-solid fa-microchip text-cyan-400"></i> <span>${dict.mechaBayTitle}</span>`;
+      document.getElementById('uiGridTitle').innerHTML = `<i class="fa-solid fa-bolt text-cyan-400"></i> <span>${dict.gridTitle}</span>`;
+      document.getElementById('uiGridSub').textContent = dict.gridSub;
+      document.getElementById('legQ').textContent = dict.legQ;
+      document.getElementById('legLoot').textContent = dict.legLoot;
+      document.getElementById('legRule').textContent = dict.legRule;
+      document.getElementById('legTrap').textContent = dict.legTrap;
+      document.getElementById('qTopic').textContent = dict.qModalTopic;
+      document.getElementById('qTitle').textContent = dict.qModalTitle;
+      document.getElementById('qArabic').textContent = dict.qModalSub;
+      document.getElementById('qCloseBtn').textContent = dict.qCloseBtn;
+      document.getElementById('giftBadgeText').textContent = dict.lootBadge;
+      document.getElementById('giftChestPrompt').textContent = dict.chestPrompt;
+      document.getElementById('chestBtn1Text').textContent = dict.chest1;
+      document.getElementById('chestBtn2Text').textContent = dict.chest2;
+      document.getElementById('giftClaimBtn').textContent = dict.lootClaimBtn;
+      document.getElementById('trapTitle').textContent = dict.trapTitle;
+      document.getElementById('trapRescuePrompt').textContent = dict.trapRescuePrompt;
+      document.getElementById('btnBreakCode').textContent = dict.btnBreakCode;
+      document.getElementById('trapCloseBtn').textContent = dict.trapContinue;
+      document.getElementById('ruleTaskLabel').innerHTML = `<i class="fa-solid fa-bullhorn"></i> ${dict.ruleTaskLabel}`;
+      document.getElementById('ruleDoneBtn').textContent = dict.ruleDoneBtn;
+      document.getElementById('winTitle').textContent = dict.winTitle;
+      document.getElementById('winDesc').textContent = dict.winDesc;
+      document.getElementById('winRestartBtn').textContent = dict.winRestart;
+
+      updateStatsUI();
+      renderBoard();
+    }
+
+    // Build Deck (36 Cards)
+    function buildCardsDeck() {
+      const deck = [];
+
+      QUESTIONS_16.forEach(q => {
+        deck.push({
+          type: 'question',
+          icon: 'fa-calculator',
+          badgeText: { ar: 'ضرب', tr: 'Çarpma', ru: 'Умножение' },
+          data: q,
+          opened: false
+        });
+      });
+
+      GIFTS_7.forEach(g => {
+        deck.push({
+          type: 'gift',
+          icon: 'fa-trophy',
+          badgeText: { ar: 'غنيمة', tr: 'Ganimet', ru: 'Трофей' },
+          data: g,
+          opened: false
+        });
+      });
+
+      TRAPS_7.forEach(t => {
+        deck.push({
+          type: 'trap',
+          icon: 'fa-skull',
+          badgeText: { ar: 'فخ', tr: 'Tuzak', ru: 'Ловушка' },
+          data: t,
+          opened: false
+        });
+      });
+
+      RULES_6.forEach(r => {
+        deck.push({
+          type: 'rule',
+          icon: 'fa-bolt',
+          badgeText: { ar: 'حكم', tr: 'Kural', ru: 'Приказ' },
+          data: r,
+          opened: false
+        });
+      });
+
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+
+      return deck;
+    }
+
+    // Render 6x6 Matrix
+    function renderBoard() {
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+      const dict = I18N[currentLang];
+
+      cardsDeck.forEach((card, idx) => {
+        const cardBox = document.createElement('div');
+        cardBox.className = 'card-scene aspect-[3/4] cursor-pointer';
+
+        const badgeLabel = card.badgeText[currentLang] || card.badgeText['ar'];
+        let shortTitle = '';
+        if (card.type === 'question') {
+          shortTitle = dict.legQ.split(' ')[0];
+        } else {
+          shortTitle = (card.data.title[currentLang] || card.data.title['ar']).substring(0, 10);
+        }
+
+        cardBox.innerHTML = `
+          <div id="card-inner-${idx}" class="card-object shadow-lg hover:shadow-cyan-500/20 rounded-2xl ${card.opened ? 'card-flipped cursor-default pointer-events-none' : ''}">
+            
+            <!-- Card Front -->
+            <div class="card-side bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-cyan-300 flex flex-col items-center justify-between p-2 border-2 border-cyan-500/50 shadow-md">
+              <div class="w-full flex justify-between items-center text-[10px] opacity-75 font-orbitron">
+                <span>#${idx + 1}</span>
+                <i class="fa-solid fa-atom text-[9px] text-cyan-400"></i>
+              </div>
+              <div class="flex flex-col items-center">
+                <i class="fa-solid fa-robot text-2xl text-cyan-400 filter drop-shadow"></i>
+                <span class="text-[10px] font-black tracking-wider mt-1 text-sky-200 font-orbitron">TITAN</span>
+              </div>
+              <div class="w-full bg-cyan-950/80 border border-cyan-500/40 py-0.5 rounded-full text-center text-[8px] font-black text-cyan-300 font-orbitron">
+                ${dict.cardUnlock}
+              </div>
+            </div>
+
+            <!-- Card Back -->
+            <div class="card-side card-back bg-slate-900 border-2 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center shadow-lg ${
+              card.type === 'question' ? 'border-cyan-400 text-cyan-300 bg-cyan-950/40' :
+              card.type === 'gift' ? 'border-amber-400 text-amber-300 bg-amber-950/40' :
+              card.type === 'rule' ? 'border-purple-400 text-purple-300 bg-purple-950/40' :
+              'border-rose-500 text-rose-300 bg-rose-950/40'
+            }">
+              <div class="w-full flex justify-between items-center text-[9px] font-bold">
+                <span class="font-orbitron">#${idx + 1}</span>
+                <span class="px-1 py-0.5 rounded text-[8px] font-bold ${
+                  card.type === 'question' ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/50' :
+                  card.type === 'gift' ? 'bg-amber-950 text-amber-300 border border-amber-500/50' :
+                  card.type === 'rule' ? 'bg-purple-950 text-purple-300 border border-purple-500/50' :
+                  'bg-rose-950 text-rose-300 border border-rose-500/50'
+                }">${badgeLabel}</span>
+              </div>
+              <div class="text-xl sm:text-2xl">
+                <i class="fa-solid ${card.icon}"></i>
+              </div>
+              <div class="text-[9px] sm:text-[10px] font-black truncate max-w-full font-orbitron">
+                ${shortTitle}
+              </div>
+            </div>
+
+          </div>
+        `;
+
+        if (!card.opened) {
+          cardBox.addEventListener('click', () => handleCardClick(idx));
+        }
+
+        grid.appendChild(cardBox);
+      });
+
+      updateStatsUI();
+    }
+
+    function handleCardClick(index) {
+      const card = cardsDeck[index];
+      if (card.opened) return;
+
+      activeCardIndex = index;
+      SoundFX.init();
+
+      const cardInner = document.getElementById(`card-inner-${index}`);
+      if (cardInner) {
+        cardInner.classList.add('card-flipped');
+      }
+      card.opened = true;
+
+      setTimeout(() => {
+        if (card.type === 'question') {
+          openQuestionModal(card.data);
+        } else if (card.type === 'gift') {
+          openGiftModal(card.data);
+        } else if (card.type === 'trap') {
+          openTrapModal(card.data);
+        } else if (card.type === 'rule') {
+          openRuleModal(card.data);
+        }
+      }, 350);
+    }
+
+    // Question Modal
+    let currentQuestion = null;
+    function openQuestionModal(qData) {
+      currentQuestion = qData;
+      document.getElementById('qPrompt').textContent = qData.prompt;
+
+      const optsContainer = document.getElementById('qOptions');
+      optsContainer.innerHTML = '';
+
+      const feedback = document.getElementById('qFeedback');
+      feedback.className = 'hidden text-xs sm:text-sm font-bold p-3 rounded-xl mb-3';
+      document.getElementById('qCloseBtn').classList.add('hidden');
+
+      qData.options.forEach((opt, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn bg-slate-950 hover:bg-slate-800 border-2 border-cyan-500/50 text-cyan-200 font-black py-3 px-3 rounded-xl text-base transition flex items-center justify-between font-orbitron active:scale-95';
+        btn.innerHTML = `
+          <span>${opt}</span>
+          <i class="fa-regular fa-circle text-cyan-500/50 text-sm"></i>
+        `;
+        btn.onclick = () => checkAnswer(i, btn);
+        optsContainer.appendChild(btn);
+      });
+
+      showModal('questionModal');
+    }
+
+    function checkAnswer(chosenIndex, btnElement) {
+      const q = currentQuestion;
+      const opts = document.querySelectorAll('.option-btn');
+      opts.forEach(b => b.classList.add('pointer-events-none'));
+
+      const feedback = document.getElementById('qFeedback');
+      feedback.classList.remove('hidden');
+      const dict = I18N[currentLang];
+      const explanationText = q.exp[currentLang] || q.exp['ar'];
+
+      if (chosenIndex === q.correct) {
+        SoundFX.play('laserCorrect');
+        btnElement.classList.remove('bg-slate-950', 'border-cyan-500/50');
+        btnElement.classList.add('bg-emerald-600', 'border-emerald-400', 'text-white');
+        btnElement.querySelector('i').className = 'fa-solid fa-circle-check text-white';
+
+        feedback.className = 'text-xs sm:text-sm font-bold p-3 rounded-xl mb-3 bg-emerald-950 border border-emerald-500 text-emerald-200';
+        feedback.innerHTML = `⚡ ${explanationText}`;
+
+        let piecesEarned = 1;
+        if (doubleNextPiece) {
+          piecesEarned = 2;
+          doubleNextPiece = false;
+          showNotification(dict.turboActivated);
+        }
+
+        for (let k = 0; k < piecesEarned; k++) {
+          addTeddyPiece();
+        }
+
+        if (pendingRule) {
+          pendingRule = null;
+          showNotification(dict.toastRuleDone);
+        }
+      } else {
+        SoundFX.play('errorBuzzer');
+        btnElement.classList.remove('bg-slate-950', 'border-cyan-500/50');
+        btnElement.classList.add('bg-rose-700', 'border-rose-500', 'text-white');
+        btnElement.querySelector('i').className = 'fa-solid fa-circle-xmark text-white';
+
+        opts[q.correct].classList.remove('bg-slate-950');
+        opts[q.correct].classList.add('bg-emerald-900', 'border-emerald-400', 'text-emerald-100');
+
+        feedback.className = 'text-xs sm:text-sm font-bold p-3 rounded-xl mb-3 bg-rose-950 border border-rose-500 text-rose-200';
+        feedback.innerHTML = `⚠️ ${explanationText}`;
+      }
+
+      document.getElementById('qCloseBtn').classList.remove('hidden');
+    }
+
+    // Gift Modal
+    let currentGift = null;
+    function openGiftModal(gift) {
+      currentGift = gift;
+      SoundFX.play('loot');
+
+      document.getElementById('giftTitle').textContent = gift.title[currentLang] || gift.title['ar'];
+      document.getElementById('giftDesc').textContent = gift.desc[currentLang] || gift.desc['ar'];
+
+      const interactiveContainer = document.getElementById('giftInteractiveContainer');
+      const actionArea = document.getElementById('giftActionArea');
+
+      if (gift.actionType === 'two_chests') {
+        interactiveContainer.classList.remove('hidden');
+        actionArea.classList.add('hidden');
+      } else {
+        interactiveContainer.classList.add('hidden');
+        actionArea.classList.remove('hidden');
+      }
+
+      showModal('giftModal');
+    }
+
+    function revealChest(choice) {
+      SoundFX.play('loot');
+      closeModal('giftModal');
+      const dict = I18N[currentLang];
+      if (choice === 1) {
+        addTeddyPiece();
+        showNotification(dict.armorAdded);
+      } else {
+        hasShield = true;
+        showNotification(dict.shieldGranted);
+      }
+      updateStatsUI();
+    }
+
+    function claimStandardGift() {
+      if (!currentGift) return;
+      const type = currentGift.actionType;
+      const dict = I18N[currentLang];
+
+      if (type === 'free_piece') {
+        addTeddyPiece();
+        showNotification(dict.armorAdded);
+      } else if (type === 'grant_shield') {
+        hasShield = true;
+        showNotification(dict.shieldGranted);
+      } else if (type === 'double_next') {
+        doubleNextPiece = true;
+        showNotification(dict.turboNextGranted);
+      } else if (type === 'clear_rule_and_piece') {
+        pendingRule = null;
+        addTeddyPiece();
+        showNotification(dict.rulesCleared);
+      } else if (type === 'wings_piece') {
+        unlockSpecificPiece(15);
+        showNotification(dict.wingsInstalled);
+      }
+
+      closeModal('giftModal');
+      updateStatsUI();
+    }
+
+    // Trap Modal
+    let currentTrap = null;
+    function openTrapModal(trap) {
+      currentTrap = trap;
+      SoundFX.play('errorBuzzer');
+      const dict = I18N[currentLang];
+
+      document.getElementById('trapTitle').textContent = trap.title[currentLang] || trap.title['ar'];
+      document.getElementById('trapDesc').textContent = trap.desc[currentLang] || trap.desc['ar'];
+      const rescueArea = document.getElementById('trapRescueArea');
+
+      if (hasShield) {
+        hasShield = false;
+        document.getElementById('trapDesc').innerHTML = `
+          <span class="text-cyan-400 font-black">🛡️ ${dict.shieldAbsorbTrap}</span>
+        `;
+        rescueArea.classList.add('hidden');
+        updateStatsUI();
+        showModal('trapModal');
+        return;
+      }
+
+      rescueArea.classList.remove('hidden');
+      document.getElementById('trapRescuePrompt').textContent = `${dict.trapRescuePrompt} (${trap.rescueMath.q} = ?)`;
+      document.getElementById('trapRescueInput').value = '';
+
+      showModal('trapModal');
+    }
+
+    function checkTrapRescue() {
+      if (!currentTrap) return;
+      const val = parseInt(document.getElementById('trapRescueInput').value.trim());
+      const dict = I18N[currentLang];
+
+      if (val === currentTrap.rescueMath.ans) {
+        SoundFX.play('laserCorrect');
+        showNotification(dict.rescueSuccess);
+        closeModal('trapModal');
+      } else {
+        SoundFX.play('errorBuzzer');
+        showNotification(`${dict.rescueFail} ${currentTrap.rescueMath.ans}`);
+        removeTeddyPiece();
+        closeModal('trapModal');
+      }
+    }
+
+    // Rule Modal
+    let currentRule = null;
+    function openRuleModal(rule) {
+      currentRule = rule;
+      SoundFX.play('loot');
+
+      document.getElementById('ruleTitle').textContent = rule.title[currentLang] || rule.title['ar'];
+      document.getElementById('ruleDesc').textContent = rule.desc[currentLang] || rule.desc['ar'];
+      document.getElementById('ruleTaskText').textContent = rule.task[currentLang] || rule.task['ar'];
+
+      showModal('ruleModal');
+    }
+
+    function acceptRuleChallenge() {
+      SoundFX.play('laserCorrect');
+      const dict = I18N[currentLang];
+      showNotification(dict.toastRuleDone);
+      closeModal('ruleModal');
+      updateStatsUI();
+    }
+
+    // Robot Engine
+    function addTeddyPiece() {
+      if (unlockedPieces.size >= TOTAL_PIECES) return;
+
+      for (let i = 1; i <= TOTAL_PIECES; i++) {
+        if (!unlockedPieces.has(i)) {
+          unlockSpecificPiece(i);
+          break;
+        }
+      }
+    }
+
+    function unlockSpecificPiece(pieceNum) {
+      if (unlockedPieces.has(pieceNum)) return;
+      unlockedPieces.add(pieceNum);
+
+      const pieceEl = document.getElementById(`part-${pieceNum}`);
+      const labelEl = document.getElementById(`label-${pieceNum}`);
+
+      if (pieceEl) {
+        pieceEl.classList.remove('piece-locked');
+        pieceEl.classList.add('piece-unlocked');
+        pieceEl.style.transform = 'scale(1.06)';
+        setTimeout(() => { pieceEl.style.transform = 'scale(1)'; }, 500);
+      }
+      if (labelEl) labelEl.style.opacity = '0';
+
+      if (pieceNum === 15) {
+        const extraLeg = document.getElementById('part-15-leg');
+        const extraLegLabel = document.getElementById('label-15-leg');
+        if (extraLeg) {
+          extraLeg.classList.remove('piece-locked');
+          extraLeg.classList.add('piece-unlocked');
+        }
+        if (extraLegLabel) extraLegLabel.style.opacity = '0';
+      }
+
+      updateStatsUI();
+
+      if (unlockedPieces.size >= TOTAL_PIECES) {
+        setTimeout(handleVictory, 600);
+      }
+    }
+
+    function removeTeddyPiece() {
+      if (unlockedPieces.size === 0) return;
+      let highest = 0;
+      unlockedPieces.forEach(n => { if (n > highest) highest = n; });
+      if (highest > 0) {
+        unlockedPieces.delete(highest);
+        const pieceEl = document.getElementById(`part-${highest}`);
+        const labelEl = document.getElementById(`label-${highest}`);
+        if (pieceEl) {
+          pieceEl.classList.remove('piece-unlocked');
+          pieceEl.classList.add('piece-locked');
+        }
+        if (labelEl) labelEl.style.opacity = '1';
+
+        if (highest === 15) {
+          const extraLeg = document.getElementById('part-15-leg');
+          const extraLegLabel = document.getElementById('label-15-leg');
+          if (extraLeg) {
+            extraLeg.classList.remove('piece-unlocked');
+            extraLeg.classList.add('piece-locked');
+          }
+          if (extraLegLabel) extraLegLabel.style.opacity = '1';
+        }
+        const dict = I18N[currentLang];
+        showNotification(`${dict.partDamaged} ${highest}! ⚠️`);
+        updateStatsUI();
+      }
+    }
+
+    function updateStatsUI() {
+      const count = unlockedPieces.size;
+      document.getElementById('piecesCount').textContent = count;
+
+      const pct = Math.round((count / TOTAL_PIECES) * 100);
+      document.getElementById('progressPercent').textContent = `${pct}% READY`;
+      document.getElementById('puzzleProgressBar').style.width = `${pct}%`;
+
+      const shieldBadge = document.getElementById('shieldBadge');
+      if (hasShield) {
+        shieldBadge.classList.remove('hidden');
+        shieldBadge.classList.add('flex');
+      } else {
+        shieldBadge.classList.add('hidden');
+        shieldBadge.classList.remove('flex');
+      }
+
+      const ruleBadge = document.getElementById('ruleBadge');
+      if (pendingRule) {
+        ruleBadge.classList.remove('hidden');
+        ruleBadge.classList.add('flex');
+      } else {
+        ruleBadge.classList.add('hidden');
+        ruleBadge.classList.remove('flex');
+      }
+
+      const dict = I18N[currentLang];
+      const hint = document.getElementById('puzzleHint');
+      if (count === 0) {
+        hint.innerHTML = dict.hints[0];
+      } else if (count < 7) {
+        hint.innerHTML = dict.hints[1].replace('{n}', count);
+      } else if (count < 14) {
+        hint.innerHTML = dict.hints[2].replace('{n}', count);
+      } else if (count === 14) {
+        hint.innerHTML = dict.hints[3];
+      } else {
+        hint.innerHTML = dict.hints[4];
+      }
+    }
+
+    function handleVictory() {
+      SoundFX.play('titanVictory');
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 180,
+          spread: 100,
+          origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+          confetti({ particleCount: 120, angle: 60, spread: 60, origin: { x: 0 } });
+          confetti({ particleCount: 120, angle: 120, spread: 60, origin: { x: 1 } });
+        }, 300);
+      }
+      showModal('winModal');
+    }
+
+    function resetGame() {
+      closeModal('questionModal');
+      closeModal('giftModal');
+      closeModal('trapModal');
+      closeModal('ruleModal');
+      closeModal('winModal');
+
+      unlockedPieces.clear();
+      hasShield = false;
+      pendingRule = null;
+      doubleNextPiece = false;
+      activeCardIndex = null;
+
+      for (let i = 1; i <= TOTAL_PIECES; i++) {
+        const p = document.getElementById(`part-${i}`);
+        const l = document.getElementById(`label-${i}`);
+        if (p) {
+          p.classList.remove('piece-unlocked');
+          p.classList.add('piece-locked');
+          p.style.transform = 'scale(1)';
+        }
+        if (l) l.style.opacity = '1';
+      }
+      const extraLeg = document.getElementById('part-15-leg');
+      const extraLegLabel = document.getElementById('label-15-leg');
+      if (extraLeg) {
+        extraLeg.classList.remove('piece-unlocked');
+        extraLeg.classList.add('piece-locked');
+      }
+      if (extraLegLabel) extraLegLabel.style.opacity = '1';
+
+      cardsDeck = buildCardsDeck();
+      renderBoard();
+      const dict = I18N[currentLang];
+      showNotification(dict.toastReset);
+    }
+
+    function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function showNotification(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-slate-950/95 text-cyan-300 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-2xl shadow-2xl z-50 transition duration-300 pointer-events-none flex items-center gap-2 border border-cyan-400 font-orbitron';
+      toast.innerHTML = `<span>⚡</span><span>${msg}</span>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2600);
+    }
+
+    window.onload = function () {
+      cardsDeck = buildCardsDeck();
+      setLanguage('ar');
+    };
+  </script>
+</body>
+</html>
